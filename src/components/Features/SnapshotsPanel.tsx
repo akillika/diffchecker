@@ -19,6 +19,7 @@ import {
   Plus,
   FolderOpen,
 } from 'lucide-react'
+import type { Snapshot } from '@/types'
 
 export function SnapshotsPanel() {
   const {

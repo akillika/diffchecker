@@ -192,13 +192,14 @@ self.onmessage = (event: MessageEvent<FormatMessage>) => {
         }
         break
 
-      case 'validate':
+      case 'validate': {
         const validationErrors = format === 'json' ? validateJson(content) : validateYaml(content)
         result = {
-          type: validationErrors.length === 0 ? 'success' : 'error',
+          type: validationErrors && validationErrors.length === 0 ? 'success' : 'error',
           errors: validationErrors,
         }
         break
+      }
 
       case 'convert':
         if (targetFormat === 'yaml') {

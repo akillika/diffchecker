@@ -35,7 +35,6 @@ export default function App() {
   const [showHistory, setShowHistory] = useState(false)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
   const [showDiffSummary, setShowDiffSummary] = useState(true)
-  const [showSnapshots, setShowSnapshots] = useState(false)
   const [toolsTab, setToolsTab] = useState<'transformers' | 'security' | 'snapshots'>('transformers')
   const {
     viewMode,
@@ -47,7 +46,6 @@ export default function App() {
     setRightFormat,
     formatOptions,
     addToHistory,
-    privacyMode,
   } = useAppStore()
 
   // Initialize theme

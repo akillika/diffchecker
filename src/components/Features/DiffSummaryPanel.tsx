@@ -2,7 +2,6 @@ import { useMemo, useCallback, useState } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { computeSemanticDiff, formatValue, getChangeBadgeColor } from '@/utils/semanticDiff'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -26,7 +25,6 @@ export function DiffSummaryPanel() {
     leftEditor,
     rightEditor,
     diffOptions,
-    semanticDiffResult,
     setSemanticDiffResult,
     showDiffSummary,
     setShowDiffSummary,

@@ -1,5 +1,5 @@
 import { useRef, useCallback } from 'react'
-import { DiffEditor as MonacoDiffEditor, OnMount, loader } from '@monaco-editor/react'
+import { DiffEditor as MonacoDiffEditor, DiffOnMount, loader } from '@monaco-editor/react'
 import type { editor } from 'monaco-editor'
 import { useAppStore } from '@/store/useAppStore'
 import { useTheme } from '@/hooks/useTheme'
@@ -31,9 +31,9 @@ export function DiffEditor({ className }: DiffEditorProps) {
   } = useAppStore()
 
   // Handle editor mount
-  const handleMount: OnMount = useCallback(
+  const handleMount: DiffOnMount = useCallback(
     (editor, monaco) => {
-      editorRef.current = editor as unknown as editor.IStandaloneDiffEditor
+      editorRef.current = editor
       monacoRef.current = monaco
 
       // Register custom themes

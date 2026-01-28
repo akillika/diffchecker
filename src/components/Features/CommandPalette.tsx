@@ -11,19 +11,14 @@ import {
   Wrench,
   Sun,
   Moon,
-  Download,
-  Copy,
   Shield,
   Camera,
-  History,
   FileJson,
   FileCode2,
   Minimize2,
   Search,
   X,
-  Keyboard,
 } from 'lucide-react'
-import type { ViewMode, FormatType, TransformerType } from '@/types'
 
 interface CommandPaletteProps {
   isOpen: boolean
