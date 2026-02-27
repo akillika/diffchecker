@@ -20,6 +20,8 @@ const shortcuts: { category: string; items: Shortcut[] }[] = [
     items: [
       { keys: ['⌘', 'Enter'], description: 'Format content' },
       { keys: ['⌘', '⇧', 'F'], description: 'Minify JSON' },
+      { keys: ['⌘', 'E'], description: 'Escape JSON' },
+      { keys: ['⌘', '⇧', 'E'], description: 'Unescape JSON' },
       { keys: ['⌘', 'S'], description: 'Download file' },
     ],
   },

@@ -14,7 +14,8 @@ import {
   validate,
   detectFormat,
 } from '@/utils/formatters'
-import { copyToClipboard, downloadFile } from '@/lib/utils'
+import { escapeJson, unescapeJson, isEscaped, countEscapeSequences, countSpecialCharacters } from '@/utils/escape'
+import { copyToClipboard, downloadFile, cn } from '@/lib/utils'
 import { useFileUpload } from '@/hooks/useFileUpload'
 import {
   Wand2,
@@ -29,6 +30,8 @@ import {
   SortAsc,
   MoreHorizontal,
   Share2,
+  Lock,
+  Unlock,
 } from 'lucide-react'
 import { generateShareUrl } from '@/utils/sharing'
 import type { FormatType } from '@/types'
@@ -176,6 +179,82 @@ export function Toolbar({ side }: ToolbarProps) {
     }
   }, [editorState.content, editorState.format, viewMode])
 
+  // Escape handler
+  const handleEscape = useCallback(() => {
+    try {
+      const stats = countSpecialCharacters(editorState.content)
+      if (stats.total === 0) {
+        toast('No special characters to escape', { icon: 'ℹ️' })
+        return
+      }
+
+      const escaped = escapeJson(editorState.content)
+      setContent(escaped)
+      addToHistory(escaped, editorState.format)
+      
+      const parts: string[] = []
+      if (stats.newlines > 0) parts.push(`${stats.newlines} newline${stats.newlines > 1 ? 's' : ''}`)
+      if (stats.tabs > 0) parts.push(`${stats.tabs} tab${stats.tabs > 1 ? 's' : ''}`)
+      if (stats.quotes > 0) parts.push(`${stats.quotes} quote${stats.quotes > 1 ? 's' : ''}`)
+      if (stats.backslashes > 0) parts.push(`${stats.backslashes} backslash${stats.backslashes > 1 ? 'es' : ''}`)
+      if (stats.controlChars > 0) parts.push(`${stats.controlChars} control char${stats.controlChars > 1 ? 's' : ''}`)
+      
+      const message = parts.length > 0 
+        ? `Escaped ${parts.slice(0, 3).join(', ')}${parts.length > 3 ? ` and ${parts.length - 3} more` : ''}`
+        : `Escaped ${stats.total} character${stats.total > 1 ? 's' : ''}`
+      
+      toast.success(message)
+    } catch (error) {
+      toast.error(`Escape error: ${(error as Error).message}`)
+    }
+  }, [editorState.content, editorState.format, setContent, addToHistory])
+
+  // Unescape handler
+  const handleUnescape = useCallback(() => {
+    try {
+      const stats = countEscapeSequences(editorState.content)
+      if (stats.total === 0) {
+        toast('No escape sequences found to unescape', { icon: 'ℹ️' })
+        return
+      }
+
+      // Use recursive unescape to handle double-escaped content
+      let unescaped = unescapeJson(editorState.content, true)
+      let unescapeCount = 1
+      
+      // Check if we need multiple passes
+      while (isEscaped(unescaped) && unescapeCount < 10) {
+        const prevUnescaped = unescaped
+        unescaped = unescapeJson(unescaped, true)
+        if (prevUnescaped === unescaped) break // No change, stop
+        unescapeCount++
+      }
+      
+      setContent(unescaped)
+      addToHistory(unescaped, editorState.format)
+      
+      const parts: string[] = []
+      if (stats.newlines > 0) parts.push(`${stats.newlines} newline${stats.newlines > 1 ? 's' : ''}`)
+      if (stats.tabs > 0) parts.push(`${stats.tabs} tab${stats.tabs > 1 ? 's' : ''}`)
+      if (stats.quotes > 0) parts.push(`${stats.quotes} quote${stats.quotes > 1 ? 's' : ''}`)
+      if (stats.backslashes > 0) parts.push(`${stats.backslashes} backslash${stats.backslashes > 1 ? 'es' : ''}`)
+      if (stats.unicode > 0) parts.push(`${stats.unicode} Unicode${stats.unicode > 1 ? 's' : ''}`)
+      if (stats.others > 0) parts.push(`${stats.others} other${stats.others > 1 ? 's' : ''}`)
+      
+      let message = parts.length > 0 
+        ? `Unescaped ${parts.slice(0, 3).join(', ')}${parts.length > 3 ? ` and ${parts.length - 3} more` : ''}`
+        : `Unescaped ${stats.total} sequence${stats.total > 1 ? 's' : ''}`
+      
+      if (unescapeCount > 1) {
+        message += ` (${unescapeCount} passes)`
+      }
+      
+      toast.success(message)
+    } catch (error) {
+      toast.error(`Unescape error: ${(error as Error).message}`)
+    }
+  }, [editorState.content, editorState.format, setContent, addToHistory])
+
   // Paste sample handler
   const handlePasteSample = useCallback(() => {
     const sample = actualFormat === 'json'
@@ -220,6 +299,18 @@ license: MIT`
     toast.success('Sample pasted!')
   }, [actualFormat, setContent])
 
+  const isContentEscaped = useMemo(() => {
+    return editorState.content ? isEscaped(editorState.content) : false
+  }, [editorState.content])
+
+  // Get escape statistics for tooltip
+  const escapeStats = useMemo(() => {
+    if (!editorState.content) return null
+    return isContentEscaped 
+      ? countEscapeSequences(editorState.content)
+      : countSpecialCharacters(editorState.content)
+  }, [editorState.content, isContentEscaped])
+
   const formatOptions_list = [
     { value: 'auto', label: 'Auto-detect' },
     { value: 'json', label: 'JSON' },
@@ -257,6 +348,52 @@ license: MIT`
         <Button variant="ghost" size="sm" onClick={handleValidate} disabled={!editorState.content}>
           <CheckCircle2 className="h-4 w-4 mr-1" />
           Validate
+        </Button>
+      </Tooltip>
+
+      <div className="w-px h-6 bg-border mx-1" />
+
+      {/* Escape/Unescape Actions */}
+      <Tooltip
+        content={
+          !editorState.content
+            ? 'Enter content to escape/unescape (Cmd+E / Cmd+Shift+E)'
+            : isContentEscaped
+              ? escapeStats && escapeStats.total > 0
+                ? `Unescape JSON - ${escapeStats.total} sequence${escapeStats.total > 1 ? 's' : ''} found (Cmd+Shift+E)`
+                : 'Unescape JSON (Cmd+Shift+E)'
+              : escapeStats && escapeStats.total > 0
+                ? `Escape JSON - ${escapeStats.total} special character${escapeStats.total > 1 ? 's' : ''} found (Cmd+E)`
+                : 'Escape JSON (Cmd+E)'
+        }
+      >
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={isContentEscaped ? handleUnescape : handleEscape}
+          disabled={!editorState.content}
+          className={cn(
+            isContentEscaped && 'text-primary',
+            escapeStats && escapeStats.total > 0 && 'ring-1 ring-primary/20'
+          )}
+        >
+          {isContentEscaped ? (
+            <>
+              <Unlock className="h-4 w-4 mr-1" />
+              Unescape
+              {escapeStats && escapeStats.total > 0 && (
+                <span className="ml-1.5 text-xs opacity-70">({escapeStats.total})</span>
+              )}
+            </>
+          ) : (
+            <>
+              <Lock className="h-4 w-4 mr-1" />
+              Escape
+              {escapeStats && escapeStats.total > 0 && (
+                <span className="ml-1.5 text-xs opacity-70">({escapeStats.total})</span>
+              )}
+            </>
+          )}
         </Button>
       </Tooltip>
 

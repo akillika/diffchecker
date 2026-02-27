@@ -21,6 +21,7 @@ import {
   CommandPalette,
 } from '@/components/Features'
 import { formatJson, formatYaml, minifyJson, detectFormat } from '@/utils/formatters'
+import { escapeJson, unescapeJson } from '@/utils/escape'
 import { downloadFile } from '@/lib/utils'
 import { parseShareUrl, clearShareUrl } from '@/utils/sharing'
 import { cn } from '@/lib/utils'
@@ -172,6 +173,39 @@ export default function App() {
       meta: true,
       action: () => setViewMode('tools'),
       description: 'Tools mode',
+    },
+    {
+      key: 'e',
+      meta: true,
+      action: () => {
+        if (!leftEditor.content) return
+        try {
+          const escaped = escapeJson(leftEditor.content)
+          setLeftContent(escaped)
+          addToHistory(escaped, leftEditor.format)
+          toast.success('Escaped!')
+        } catch (e) {
+          toast.error((e as Error).message)
+        }
+      },
+      description: 'Escape JSON',
+    },
+    {
+      key: 'e',
+      meta: true,
+      shift: true,
+      action: () => {
+        if (!leftEditor.content) return
+        try {
+          const unescaped = unescapeJson(leftEditor.content)
+          setLeftContent(unescaped)
+          addToHistory(unescaped, leftEditor.format)
+          toast.success('Unescaped!')
+        } catch (e) {
+          toast.error((e as Error).message)
+        }
+      },
+      description: 'Unescape JSON',
     },
   ])
 
