@@ -14,6 +14,7 @@ A production-grade **JSON & YAML Formatter, Validator, Linter, and Diff Comparis
 - **Linting**: Highlight issues directly in the editor with suggestions
 - **Diff Comparison**: Side-by-side comparison with line and word diff
 - **Format Conversion**: Convert between JSON and YAML seamlessly
+- **Escape/Unescape**: Convert special characters to/from JSON escape sequences with smart detection
 
 ### Editor Features
 
@@ -40,6 +41,12 @@ A production-grade **JSON & YAML Formatter, Validator, Linter, and Diff Comparis
 - **Shareable URLs**: Compress and share via URL
 - **Dark/Light Mode**: With multiple editor themes
 - **Keyboard Shortcuts**: Quick access to common actions
+- **Escape/Unescape Tool**: 
+  - Automatically detects if content is already escaped
+  - Shows count of special characters/sequences in button badge
+  - Handles double-escaped content automatically (recursive unescaping)
+  - Detailed toast notifications showing what was processed
+  - Visual indicators (ring highlight, color changes)
 
 ## Tech Stack
 
@@ -94,6 +101,8 @@ npm run preview
 |----------|--------|
 | `Cmd/Ctrl + Enter` | Format content |
 | `Cmd/Ctrl + Shift + F` | Minify JSON |
+| `Cmd/Ctrl + E` | Escape JSON (convert special chars to escape sequences) |
+| `Cmd/Ctrl + Shift + E` | Unescape JSON (convert escape sequences to actual chars) |
 | `Cmd/Ctrl + S` | Download file |
 | `Cmd/Ctrl + D` | Toggle Diff mode |
 | `Cmd/Ctrl + 1` | Format mode |
@@ -132,6 +141,7 @@ src/
 ├── utils/
 │   ├── formatters.ts           # JSON/YAML formatting logic
 │   ├── diff.ts                 # Diff comparison logic
+│   ├── escape.ts                # Escape/unescape utilities
 │   └── sharing.ts              # URL sharing utilities
 ├── workers/
 │   └── formatter.worker.ts     # Web Worker for large files
@@ -157,6 +167,58 @@ src/
 | `class-variance-authority` | Component variants |
 | `tailwind-merge` | Tailwind class merging |
 | `clsx` | Conditional class names |
+
+## Escape/Unescape Feature
+
+The escape/unescape tool helps you convert special characters to/from JSON escape sequences.
+
+### Features
+
+- **Smart Detection**: Automatically detects if content is already escaped
+- **Visual Indicators**: 
+  - Button badge shows count of special characters/sequences
+  - Ring highlight when content is ready to process
+  - Button color changes based on state
+- **Recursive Unescaping**: Automatically handles double-escaped (or triple-escaped) content in a single click
+- **Detailed Feedback**: Toast notifications show exactly what was processed (e.g., "Escaped 3 newlines, 2 tabs, 1 quote")
+- **Keyboard Shortcuts**: Quick access with `Cmd/Ctrl + E` (escape) and `Cmd/Ctrl + Shift + E` (unescape)
+
+### What Gets Escaped/Unescaped
+
+**Escape converts:**
+- `"` → `\"`
+- `\n` → `\\n` (actual newline to escape sequence)
+- `\t` → `\\t` (actual tab to escape sequence)
+- `\` → `\\`
+- Control characters → Unicode escapes (`\uXXXX`)
+
+**Unescape converts:**
+- `\"` → `"`
+- `\n` → actual newline character
+- `\t` → actual tab character
+- `\\` → `\`
+- `\uXXXX` → Unicode character
+
+### Example
+
+**Input:**
+```
+Hello "World"
+Line with tab	
+And newline
+```
+
+**After Escape:**
+```
+Hello \"World\"\nLine with tab\t\nAnd newline
+```
+
+**After Unescape (from escaped version):**
+```
+Hello "World"
+Line with tab	
+And newline
+```
 
 ## Editor Themes
 
